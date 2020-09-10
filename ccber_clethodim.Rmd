@@ -1,0 +1,218 @@
+---
+title: "CCBER Clethodim Experiment"
+author: "Joanna Tang"
+date: "9/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include = FALSE}
+
+# Load packages, read in data
+
+library(tidyverse)
+library(janitor)
+library(plotrix)
+
+
+clethodim_seeds <- read_csv("clethodim_seeds.csv") %>% filter(treatment != "NA")
+
+
+```
+
+# Do clethodim herbicide treatments affect the fitness of Nipomo lupine?
+
+## H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedlings stage) should have no significant effect on the viable seed production of Nipomo lupine.
+
+```{r message = FALSE, echo = FALSE, warning = FALSE}
+
+# H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedlings stage) should have no significant effect on the viable seed production of Nipomo lupine.
+
+## Dataframe of viable seeds/pod, % viable seeds
+seed_ratios <- clethodim_seeds %>% 
+  mutate(viable_seeds = as.numeric(viable_seeds)) %>% 
+  mutate(viable_per_pod = viable_seeds/seed_pods) %>% 
+  mutate(percent_viable = (viable_seeds)/(viable_seeds+non_viable_seeds))
+
+## Exploratory graphs -- checking for normality
+pods_hist <- ggplot(seed_ratios, aes(x = seed_pods)) +
+  geom_histogram()
+#pretty normal
+pods_qq <- ggplot(seed_ratios, aes(sample = seed_pods)) +
+  geom_qq()
+#pretty normal
+total_seeds_hist <- ggplot(seed_ratios, aes(x = viable_seeds)) +
+  geom_histogram()
+#mostly normal...
+total_seeds_qq <- ggplot(seed_ratios, aes(sample = viable_seeds)) +
+  geom_qq()
+#mosly normal...
+seeds_per_pod_hist <- ggplot(seed_ratios, aes(x = viable_per_pod)) +
+  geom_histogram()
+#pretty normal
+pods_qq <- ggplot(seed_ratios, aes(sample = viable_per_pod)) +
+  geom_qq()
+#pretty normal
+percent_viable_hist <- ggplot(seed_ratios, aes(x = percent_viable)) +
+  geom_histogram()
+#skewed left
+percent_viable_qq <- ggplot(seed_ratios, aes(sample = percent_viable)) +
+  geom_qq()
+#skewed left
+
+
+## Dataframe of means and standard errors
+summary_seed_ratios <- seed_ratios %>% 
+  group_by(treatment, treatment_number) %>% 
+  drop_na() %>% 
+  summarize(mean_seeds = mean(viable_seeds),
+            se_seeds = std.error(viable_seeds),
+            mean_per_pod = mean(viable_per_pod),
+            se_per_pod = std.error(viable_per_pod),
+            mean_pods = mean(seed_pods),
+            se_pods = std.error(seed_pods))
+
+## Dataframe of means and standard errors, by seedling stage
+summary_seed_ratios_stage <- seed_ratios %>% 
+  group_by(treatment, treatment_number, seedling_stage) %>% 
+  drop_na() %>% 
+  summarize(mean_seeds = mean(viable_seeds),
+            se_seeds = std.error(viable_seeds),
+            mean_per_pod = mean(viable_per_pod),
+            se_per_pod = std.error(viable_per_pod),
+            mean_pods = mean(seed_pods),
+            se_pods = std.error(seed_pods))
+
+### Column graph of viable seeds per pod, by treatment, by seedling stage
+seeds_per_pod_stage_col <- summary_seed_ratios_stage %>% 
+  ggplot(aes(x = treatment, y = mean_per_pod)) +
+  geom_col(aes(fill = seedling_stage)) +
+  geom_errorbar(aes(x = treatment, ymin = mean_per_pod-se_per_pod, ymax = mean_per_pod+se_per_pod, width = .5)) +
+  facet_wrap(~seedling_stage) +
+  scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
+  labs(title = "Viable seeds per pod, by seedling stage", x = "Treatment", y = "Average number of seeds", caption = "No sig difference (ANOVA p > .05)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+seeds_per_pod_stage_col
+
+### ANOVAs of viable seeds per pod by treatment, by seedling stage
+flowering_seed_ratios <- seed_ratios %>% 
+  filter(seedling_stage == "flowering")
+flowering_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = flowering_seed_ratios)
+#summary(flowering_seeds_per_pod_anova)
+#p = .928
+germinating_seed_ratios <- seed_ratios %>% 
+  filter(seedling_stage != "flowering")
+germinating_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = germinating_seed_ratios)
+#summary(germinating_seeds_per_pod_anova)
+#p = .41
+
+### Column graph of viable seeds per pod, by treatment
+seeds_per_pod_col <- summary_seed_ratios %>% 
+  ggplot(aes(x = treatment, y = mean_per_pod)) +
+  geom_col() +
+  geom_errorbar(aes(x = treatment, ymin = mean_per_pod-se_per_pod, ymax = mean_per_pod+se_per_pod, width = .5)) +
+  labs(title = "Viable seeds per pod", x = "Treatment", y = "Average number of seeds", caption = "No sig difference (ANOVA p = 0.42)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+seeds_per_pod_col
+
+### ANOVA of viable seeds per pod, by treatment
+seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = seed_ratios)
+#summary(seeds_per_pod_anova)
+#p = .42
+
+### Column graph of pods per plant, by treatment, by seedling stage
+pods_per_plant_stage_col <- summary_seed_ratios_stage %>% 
+  ggplot(aes(x = treatment, y = mean_pods)) +
+  geom_col(aes(fill = seedling_stage)) +
+  geom_errorbar(aes(x = treatment, ymin = mean_pods-se_pods, ymax = mean_pods+se_pods, width = .5)) +
+  facet_wrap(~seedling_stage) +
+  scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
+  labs(title = "Pods per plant, by seedling stage", x = "Treatment", y = "Average number of pods per plant", caption = "No sig difference (ANOVA p > 0.1)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+pods_per_plant_stage_col
+
+### ANOVAs of pods per plant by treatment, by seedling stage
+flowering_seeds_per_pod_anova <- aov(seed_pods ~ treatment, data = flowering_seed_ratios)
+#summary(flowering_seeds_per_pod_anova)
+#p = .129
+germinating_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = germinating_seed_ratios)
+#summary(germinating_seeds_per_pod_anova)
+#p = .41
+
+### Column graph of pods per plant, by treatment
+pods_per_plant_col <- summary_seed_ratios %>% 
+  ggplot(aes(x = treatment, y = mean_pods)) +
+  geom_col() +
+  geom_errorbar(aes(x = treatment, ymin = mean_pods-se_pods, ymax = mean_pods+se_pods, width = .5)) +
+  labs(title = "Pods per plant", x = "Treatment", y = "Average number of pods per plant", caption = "No sig difference (ANOVA p = 0.145)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+pods_per_plant_col
+
+### ANOVA of  pods per plant, by treatment
+pods_per_plant_anova <- aov(seed_pods ~ treatment, data = seed_ratios)
+#summary(pods_per_plant_anova)
+#p = .145
+
+### Column graph of seeds per plant, by treatment, by seedling stage
+seeds_per_plant_stage_col <- summary_seed_ratios_stage %>% 
+  ggplot(aes(x = treatment, y = mean_seeds)) +
+  geom_col(aes(fill = seedling_stage)) +
+  geom_errorbar(aes(x = treatment, ymin = mean_seeds-se_seeds, ymax = mean_seeds+se_seeds, width = .5)) +
+  facet_wrap(~seedling_stage) +
+  scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
+  labs(title = "Viable seeds per plant, by seedling stage", x = "Treatment", y = "Average number of seeds per plant", caption = "No sig difference (ANOVA p > 0.1)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+seeds_per_plant_stage_col
+
+### ANOVAs of seeds per plant by treatment, by seedling stage
+flowering_seeds_anova <- aov(viable_seeds ~ treatment, data = flowering_seed_ratios)
+#summary(flowering_seeds_anova)
+#p = .126
+germinating_seeds_anova <- aov(viable_seeds ~ treatment, data = germinating_seed_ratios)
+#summary(germinating_seeds_anova)
+#p = .313
+
+### Column graph of seeds per plant, by treatment
+seeds_per_plant_col <- summary_seed_ratios %>% 
+  ggplot(aes(x = treatment, y = mean_seeds)) +
+  geom_col() +
+  geom_errorbar(aes(x = treatment, ymin = mean_seeds-se_seeds, ymax = mean_seeds+se_seeds, width = .5)) +
+  scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
+  labs(title = "Viable seeds per plant", x = "Treatment", y = "Average number of seeds per plant", caption = "No sig difference (ANOVA p = 0.0843)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+scale_x_discrete(labels = c("Aerial Spray", "Control", "Direct Spray"))
+seeds_per_plant_col
+
+### ANOVA of  seeds per plant, by treatment
+seeds_per_plant_anova <- aov(viable_seeds ~ treatment, data = seed_ratios)
+#summary(seeds_per_plant_anova)
+#p = .0843
+
+```
+
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+
+## H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedling stage) should have no significant effect on the vigor of Nipomo lupine.
+
+
+```
