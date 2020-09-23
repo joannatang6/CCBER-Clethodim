@@ -18,14 +18,17 @@ library(janitor)
 library(plotrix)
 
 
+
 clethodim_seeds <- read_csv("clethodim_seeds.csv") %>% filter(treatment != "NA")
+clethodim_vigor <- read_csv("clethodim_vigor.csv") %>% mutate(date = as.Date(date, format = "%m/%d/%y"))
 
 
 ```
 
 # Do clethodim herbicide treatments affect the fitness of Nipomo lupine?
 
-## H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedlings stage) should have no significant effect on the viable seed production of Nipomo lupine.
+### H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedlings stage) should have no significant effect on the viable seed production of Nipomo lupine.
+#### Result: No significant effect of any treatment, regardless of seedling stage.  H1 supported.
 
 ```{r message = FALSE, echo = FALSE, warning = FALSE}
 
@@ -210,9 +213,91 @@ seeds_per_plant_anova <- aov(viable_seeds ~ treatment, data = seed_ratios)
 
 ```
 
+
+
+
+### H2: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedling stage) should have no significant effect on the vigor of Nipomo lupine.
+#### Result: No significant effect of any treatment, regardless of seedling stage.  H2 supported.
+
 ```{r message = FALSE, warning = FALSE, echo = FALSE}
 
-## H1: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedling stage) should have no significant effect on the vigor of Nipomo lupine.
+# H2: Because clethodim is a grass-specific herbicide, application (regardless of treatment -- direct or aerial -- or seedling stage) should have no significant effect on the vigor of Nipomo lupine.
 
+# Dataframe calculating average vigor
+summary_vigor <- clethodim_vigor %>% 
+  group_by(date, treatment, seedling_stage) %>% 
+  summarize(mean_vigor = mean(vigor),
+            se_vigor = std.error(vigor))
+  
+# Dataframe calculating % at each vigor
+vigor_proportions <- clethodim_vigor %>% 
+  count(date, seedling_stage, vigor, treatment) %>% 
+  group_by(date, treatment, seedling_stage, vigor) %>% 
+  summarize(proportion = sum(n)/30)
+
+
+# Scatterplot of vigor over time
+vigor_scatter <- clethodim_vigor %>% 
+  ggplot(aes(x = date, y = vigor)) +
+  geom_point(aes(color = seedling_stage)) +
+  geom_smooth(method = lm, aes(x = date, group = seedling_stage), se = TRUE, size = .5) +
+  facet_wrap(~treatment) +
+  labs(title = "Plant vigor over time", x = "Date", y = "Vigor Index", caption = "Flowering seedlings experienced decrased vigor over time") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0.5, 4.5))
+vigor_scatter
+
+# Stacked column graph of vigor proportion over time
+vigor_col <- vigor_proportions %>% 
+  ggplot(aes(x = date, y = proportion, fill = as.factor(vigor))) +
+  geom_col(position = "fill") +
+  facet_grid(seedling_stage ~ treatment) +
+  scale_fill_manual(values = c("chartreuse4", "yellowgreen", "yellow2", "coral", "brown3", "tan3", "tan4"), name = "Vigor") +
+  labs(title = "Vigor proportions over time", x = "Date", y = "Proportion", caption = "Sig more mortality for flowering seedlings regardless of treatment (chi-squared p << 0.01), \n no sig difference between treatments") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90))
+vigor_col
+
+
+## Chi-squared test of vigor proportions at 6/7/20 & 6/25/20, between seedling stages
+vigor_seedling_chi_squared_matrix <- clethodim_vigor %>% 
+  filter(final_observation == "final") %>% 
+  count(seedling_stage, vigor) %>% 
+  spread(vigor, n) %>% # tell the fxn which column to spread by and what to fill the obs with
+  select(-seedling_stage)
+vigor_seedling_chi_squared_matrix[is.na(vigor_seedling_chi_squared_matrix)] <- 0
+rownames(vigor_seedling_chi_squared_matrix) <- c("Flowering", "Newly Germinated")
+vigor_seedling_chi_squared <- chisq.test(vigor_seedling_chi_squared_matrix)
+#vigor_seedling_chi_squared
+#p << .001 (regardless of including 3 herbivory mortalities)
+
+## Chi-squared test of vigor proportions at 6/7/20, for newly germinated seedlings between treatments
+vigor_germinated_treatment_chi_squared_matrix <- clethodim_vigor %>% 
+  filter(final_observation == "final") %>% 
+  filter(seedling_stage != "flowering") %>% 
+  count(treatment, vigor) %>% 
+  spread(vigor, n) %>% # tell the fxn which column to spread by and what to fill the obs with
+  select(-treatment)
+vigor_germinated_treatment_chi_squared_matrix[is.na(vigor_germinated_treatment_chi_squared_matrix)] <- 0
+rownames(vigor_germinated_treatment_chi_squared_matrix) <- c("Aerial", "Control", "Direct")
+vigor_germinated_treatment_chi_squared <- chisq.test(vigor_germinated_treatment_chi_squared_matrix)
+#vigor_germinated_treatment_chi_squared
+#p = .1461
+
+## Chi-squared test of vigor proportions at 6/25/20, for flowering seedlings between treatments
+vigor_flowering_treatment_chi_squared_matrix <- clethodim_vigor %>% 
+  filter(final_observation == "final") %>% 
+  filter(seedling_stage == "flowering") %>% 
+  count(treatment, vigor) %>% 
+  spread(vigor, n) %>% # tell the fxn which column to spread by and what to fill the obs with
+  select(-treatment)
+vigor_flowering_treatment_chi_squared_matrix[is.na(vigor_flowering_treatment_chi_squared_matrix)] <- 0
+rownames(vigor_flowering_treatment_chi_squared_matrix) <- c("Aerial", "Control", "Direct")
+vigor_flowering_treatment_chi_squared <- chisq.test(vigor_flowering_treatment_chi_squared_matrix)
+#vigor_flowering_treatment_chi_squared
+#p = .03567
 
 ```
