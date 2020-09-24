@@ -21,6 +21,7 @@ library(plotrix)
 
 clethodim_seeds <- read_csv("clethodim_seeds.csv") %>% filter(treatment != "NA")
 clethodim_vigor <- read_csv("clethodim_vigor.csv") %>% mutate(date = as.Date(date, format = "%m/%d/%y"))
+clethodim_vigor$treatment <- factor(clethodim_vigor$treatment, labels = c("Aerial Spray", "Control", "Direct Spray"))
 
 
 ```
@@ -96,7 +97,7 @@ seeds_per_pod_stage_col <- summary_seed_ratios_stage %>%
   geom_errorbar(aes(x = treatment, ymin = mean_per_pod-se_per_pod, ymax = mean_per_pod+se_per_pod, width = .5)) +
   facet_wrap(~seedling_stage) +
   scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
-  labs(title = "Viable seeds per pod, by seedling stage", x = "Treatment", y = "Average number of seeds", caption = "No sig difference (ANOVA p > .05)") +
+  labs(title = "Viable seeds per pod, by seedling stage", x = "Treatment", y = "Average number of seeds", caption = "Graph of average number of viable seeds per pod, with standard error represented as error bars. \n No significant difference between treatments for \n early germinating seedlings (ANOVA F = 0.93, p = 0.41) \n or for flowering seedlings (ANOVA F = 2.2, p = 0.93)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -108,19 +109,19 @@ flowering_seed_ratios <- seed_ratios %>%
   filter(seedling_stage == "flowering")
 flowering_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = flowering_seed_ratios)
 #summary(flowering_seeds_per_pod_anova)
-#p = .928
+#p = .928, F-value = 2.209
 germinating_seed_ratios <- seed_ratios %>% 
   filter(seedling_stage != "flowering")
 germinating_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = germinating_seed_ratios)
 #summary(germinating_seeds_per_pod_anova)
-#p = .41
+#p = .41, F-value = .925
 
 ### Column graph of viable seeds per pod, by treatment
 seeds_per_pod_col <- summary_seed_ratios %>% 
   ggplot(aes(x = treatment, y = mean_per_pod)) +
   geom_col() +
   geom_errorbar(aes(x = treatment, ymin = mean_per_pod-se_per_pod, ymax = mean_per_pod+se_per_pod, width = .5)) +
-  labs(title = "Viable seeds per pod", x = "Treatment", y = "Average number of seeds", caption = "No sig difference (ANOVA p = 0.42)") +
+  labs(title = "Viable seeds per pod", x = "Treatment", y = "Average number of seeds", caption = "Graph of average number of viable seeds per pod, with standard error represented as error bars. \n No significant difference between treatments (ANOVA F = 0.88, p = 0.42)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -130,7 +131,7 @@ seeds_per_pod_col
 ### ANOVA of viable seeds per pod, by treatment
 seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = seed_ratios)
 #summary(seeds_per_pod_anova)
-#p = .42
+#p = .42, F-value = .882
 
 ### Column graph of pods per plant, by treatment, by seedling stage
 pods_per_plant_stage_col <- summary_seed_ratios_stage %>% 
@@ -139,7 +140,7 @@ pods_per_plant_stage_col <- summary_seed_ratios_stage %>%
   geom_errorbar(aes(x = treatment, ymin = mean_pods-se_pods, ymax = mean_pods+se_pods, width = .5)) +
   facet_wrap(~seedling_stage) +
   scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
-  labs(title = "Pods per plant, by seedling stage", x = "Treatment", y = "Average number of pods per plant", caption = "No sig difference (ANOVA p > 0.1)") +
+  labs(title = "Pods per plant, by seedling stage", x = "Treatment", y = "Average number of pods per plant", caption = "Graph of average number of pods per plant, with standard error represented as error bars. \n No significant difference between treatments for \n early germinating seedlings (ANOVA F = 0.674, p = 0.52) \n or for flowering seedlings (ANOVA F = 0.075, p = 0.93)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -149,17 +150,17 @@ pods_per_plant_stage_col
 ### ANOVAs of pods per plant by treatment, by seedling stage
 flowering_seeds_per_pod_anova <- aov(seed_pods ~ treatment, data = flowering_seed_ratios)
 #summary(flowering_seeds_per_pod_anova)
-#p = .129
-germinating_seeds_per_pod_anova <- aov(viable_per_pod ~ treatment, data = germinating_seed_ratios)
+#p = .928, F-value = .075
+germinating_seeds_per_pod_anova <- aov(seed_pods ~ treatment, data = germinating_seed_ratios)
 #summary(germinating_seeds_per_pod_anova)
-#p = .41
+#p = .518, F-value = .674
 
 ### Column graph of pods per plant, by treatment
 pods_per_plant_col <- summary_seed_ratios %>% 
   ggplot(aes(x = treatment, y = mean_pods)) +
   geom_col() +
   geom_errorbar(aes(x = treatment, ymin = mean_pods-se_pods, ymax = mean_pods+se_pods, width = .5)) +
-  labs(title = "Pods per plant", x = "Treatment", y = "Average number of pods per plant", caption = "No sig difference (ANOVA p = 0.145)") +
+  labs(title = "Pods per plant", x = "Treatment", y = "Average number of pods per plant", caption = "Graph of average number of pods per plant, with standard error represented as error bars. \n No significant difference between treatments (ANOVA F = 2.0, p = 0.15)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -169,7 +170,7 @@ pods_per_plant_col
 ### ANOVA of  pods per plant, by treatment
 pods_per_plant_anova <- aov(seed_pods ~ treatment, data = seed_ratios)
 #summary(pods_per_plant_anova)
-#p = .145
+#p = .145, F-value = 1.995
 
 ### Column graph of seeds per plant, by treatment, by seedling stage
 seeds_per_plant_stage_col <- summary_seed_ratios_stage %>% 
@@ -178,7 +179,7 @@ seeds_per_plant_stage_col <- summary_seed_ratios_stage %>%
   geom_errorbar(aes(x = treatment, ymin = mean_seeds-se_seeds, ymax = mean_seeds+se_seeds, width = .5)) +
   facet_wrap(~seedling_stage) +
   scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
-  labs(title = "Viable seeds per plant, by seedling stage", x = "Treatment", y = "Average number of seeds per plant", caption = "No sig difference (ANOVA p > 0.1)") +
+  labs(title = "Viable seeds per plant, by seedling stage", x = "Treatment", y = "Average number of seeds per plant", caption = "Graph of average number of viable seeds per plant, with standard error represented as error bars. \n No significant difference between treatments for \n early germinating seedlings (ANOVA F = 1.2, p = 0.31) \n or for flowering seedlings (ANOVA F = 2.2, p = 0.13)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -188,10 +189,10 @@ seeds_per_plant_stage_col
 ### ANOVAs of seeds per plant by treatment, by seedling stage
 flowering_seeds_anova <- aov(viable_seeds ~ treatment, data = flowering_seed_ratios)
 #summary(flowering_seeds_anova)
-#p = .126
+#p = .126, F-value = 2.24
 germinating_seeds_anova <- aov(viable_seeds ~ treatment, data = germinating_seed_ratios)
 #summary(germinating_seeds_anova)
-#p = .313
+#p = .313, F-value = 1.214
 
 ### Column graph of seeds per plant, by treatment
 seeds_per_plant_col <- summary_seed_ratios %>% 
@@ -199,7 +200,7 @@ seeds_per_plant_col <- summary_seed_ratios %>%
   geom_col() +
   geom_errorbar(aes(x = treatment, ymin = mean_seeds-se_seeds, ymax = mean_seeds+se_seeds, width = .5)) +
   scale_fill_manual(values = c("darkgreen", "chartreuse4"), name = "Seedling Stage") +
-  labs(title = "Viable seeds per plant", x = "Treatment", y = "Average number of seeds per plant", caption = "No sig difference (ANOVA p = 0.0843)") +
+  labs(title = "Viable seeds per plant", x = "Treatment", y = "Average number of seeds per plant", caption = "Graph of average number of pods per plant, with standard error represented as error bars. \n No significant difference between treatments (ANOVA F = 2.6, p = 0.084)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
@@ -209,7 +210,7 @@ seeds_per_plant_col
 ### ANOVA of  seeds per plant, by treatment
 seeds_per_plant_anova <- aov(viable_seeds ~ treatment, data = seed_ratios)
 #summary(seeds_per_plant_anova)
-#p = .0843
+#p = .0843, F-value = 2.584 
 
 ```
 
@@ -236,30 +237,60 @@ vigor_proportions <- clethodim_vigor %>%
   summarize(proportion = sum(n)/30)
 
 
-# Scatterplot of vigor over time
-vigor_scatter <- clethodim_vigor %>% 
+# Scatterplot of vigor over time, for early germinating seedlings
+vigor_germinating_scatter <- clethodim_vigor %>% 
+  filter(seedling_stage != "flowering") %>% 
   ggplot(aes(x = date, y = vigor)) +
-  geom_point(aes(color = seedling_stage)) +
+  geom_point() +
   geom_smooth(method = lm, aes(x = date, group = seedling_stage), se = TRUE, size = .5) +
   facet_wrap(~treatment) +
-  labs(title = "Plant vigor over time", x = "Date", y = "Vigor Index", caption = "Flowering seedlings experienced decrased vigor over time") +
+  labs(title = "Plant vigor over time", x = "Date", y = "Vigor Index", caption = "Graph shows general linear model of plant vigor index (ranging from 1 = healthy to 4 = dead) over time \n for early germinating seedlings") +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90)) +
   scale_y_continuous(expand = c(0,0), limits = c(0.5, 4.5))
-vigor_scatter
+vigor_germinating_scatter
 
-# Stacked column graph of vigor proportion over time
-vigor_col <- vigor_proportions %>% 
+# Scatterplot of vigor over time, for flowering seedlings
+vigor_flowering_scatter <- clethodim_vigor %>% 
+  filter(seedling_stage == "flowering") %>% 
+  ggplot(aes(x = date, y = vigor)) +
+  geom_point() +
+  geom_smooth(method = lm, aes(x = date, group = seedling_stage), se = TRUE, size = .5) +
+  facet_wrap(~treatment) +
+  labs(title = "Plant vigor over time", x = "Date", y = "Vigor Index", caption = "Graph shows general linear model of plant vigor index (ranging from 1 = healthy to 4 = dead) over time \n for early flowering seedlings") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0.5, 4.5))
+vigor_flowering_scatter
+
+
+# Stacked column graph of vigor proportion over time, for early germinating seedlings
+vigor_germinating_col <- vigor_proportions %>% 
+  filter(seedling_stage != "flowering") %>% 
   ggplot(aes(x = date, y = proportion, fill = as.factor(vigor))) +
   geom_col(position = "fill") +
-  facet_grid(seedling_stage ~ treatment) +
-  scale_fill_manual(values = c("chartreuse4", "yellowgreen", "yellow2", "coral", "brown3", "tan3", "tan4"), name = "Vigor") +
-  labs(title = "Vigor proportions over time", x = "Date", y = "Proportion", caption = "Sig more mortality for flowering seedlings regardless of treatment (chi-squared p << 0.01), \n no sig difference between treatments") +
+  facet_wrap(~treatment) +
+  scale_fill_manual(values = c("chartreuse4", "yellowgreen", "yellow2", "coral", "brown3", "tan3", "tan4"), name = "Vigor Index") +
+  labs(title = "Vigor proportions over time", x = "Date", y = "Proportion", caption = "Graph shows proportion of plant vigor index (ranging from 1 = healthy to 4 = dead) \n for early germinating seedlingss  (chi-squared = 9.5, p = 0.15)") +
   theme_classic() +
   scale_y_continuous(expand = c(0,0)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90))
-vigor_col
+vigor_germinating_col
+
+# Stacked column graph of vigor proportion over time, for flowering seedlings
+vigor_flowering_col <- vigor_proportions %>% 
+  filter(seedling_stage == "flowering") %>% 
+  ggplot(aes(x = date, y = proportion, fill = as.factor(vigor))) +
+  geom_col(position = "fill") +
+  facet_wrap(~treatment) +
+  scale_fill_manual(values = c("chartreuse4", "yellowgreen", "yellow2", "coral", "brown3", "tan3", "tan4"), name = "Vigor Index") +
+  labs(title = "Vigor proportions over time", x = "Date", y = "Proportion", caption = "Graph shows proportion of plant vigor index (ranging from 1 = healthy to 4 = dead) \n for flowering seedlings \n Significant effect of direct spray treatment on final vigor index proportion (chi-squared = 6.7 p = 0.04)") +
+  theme_classic() +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90))
+vigor_flowering_col
 
 
 ## Chi-squared test of vigor proportions at 6/7/20 & 6/25/20, between seedling stages
@@ -272,7 +303,7 @@ vigor_seedling_chi_squared_matrix[is.na(vigor_seedling_chi_squared_matrix)] <- 0
 rownames(vigor_seedling_chi_squared_matrix) <- c("Flowering", "Newly Germinated")
 vigor_seedling_chi_squared <- chisq.test(vigor_seedling_chi_squared_matrix)
 #vigor_seedling_chi_squared
-#p << .001 (regardless of including 3 herbivory mortalities)
+#p << .001 (regardless of including 3 herbivory mortalities), chi-squared = 45.6
 
 ## Chi-squared test of vigor proportions at 6/7/20, for newly germinated seedlings between treatments
 vigor_germinated_treatment_chi_squared_matrix <- clethodim_vigor %>% 
@@ -285,7 +316,7 @@ vigor_germinated_treatment_chi_squared_matrix[is.na(vigor_germinated_treatment_c
 rownames(vigor_germinated_treatment_chi_squared_matrix) <- c("Aerial", "Control", "Direct")
 vigor_germinated_treatment_chi_squared <- chisq.test(vigor_germinated_treatment_chi_squared_matrix)
 #vigor_germinated_treatment_chi_squared
-#p = .1461
+#p = .1461, chi-squared = 9.525
 
 ## Chi-squared test of vigor proportions at 6/25/20, for flowering seedlings between treatments
 vigor_flowering_treatment_chi_squared_matrix <- clethodim_vigor %>% 
@@ -298,6 +329,6 @@ vigor_flowering_treatment_chi_squared_matrix[is.na(vigor_flowering_treatment_chi
 rownames(vigor_flowering_treatment_chi_squared_matrix) <- c("Aerial", "Control", "Direct")
 vigor_flowering_treatment_chi_squared <- chisq.test(vigor_flowering_treatment_chi_squared_matrix)
 #vigor_flowering_treatment_chi_squared
-#p = .03567
+#p = .03567, chi-squared = 6.6667
 
 ```
